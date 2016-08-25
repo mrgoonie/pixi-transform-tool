@@ -1,0 +1,68 @@
+
+/* Quick center position */
+
+.helper-centerbox {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	-webkit-transform: translate(-50%, -50%);
+	-moz-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+}
+.helper-centerV {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	-webkit-transform: translateY(-50%);
+	-moz-transform: translateY(-50%);
+	-ms-transform: translateY(-50%);
+}
+.helper-centerH {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	-webkit-transform: translateX(-50%);
+	-moz-transform: translateX(-50%);
+	-ms-transform: translateX(-50%);
+}
+
+/* Quick show/hide element */
+
+.helper-hide {
+	display: none;
+}
+.helper-force-hide {
+	display: none !important;
+}
+
+/* Quick layout position */
+
+.helper-snap-topleft {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: auto;
+	right: auto;
+}
+.helper-snap-topright {
+	position: absolute;
+	top: 0;
+	left: auto;
+	bottom: auto;
+	right: 0;
+}
+.helper-snap-bottomleft {
+	position: absolute;
+	top: auto;
+	left: 0;
+	bottom: 0;
+	right: auto;
+}
+.helper-snap-bottomright {
+	position: absolute;
+	top: auto;
+	left: auto;
+	bottom: 0;
+	right: 0;
+}
