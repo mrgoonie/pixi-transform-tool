@@ -32,6 +32,7 @@ transformTool.clear();
 
 ## Notes:
 - Must include "js/plugins/gpixi.js" and "js/plugins/helper.js" before "js/transform-tool-v4-v01.js"
+- jQuery is a need as well! (Sorry, I'm just too lazy to write pure Javascript)
 - The code is under development and hadn't been compressed. 
 
 Please feel free to contribute!
