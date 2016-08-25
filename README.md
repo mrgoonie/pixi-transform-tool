@@ -3,6 +3,8 @@ I made a PIXI (v4) plugin which can transform a display object.
 
 Demo: http://dev2.digitop.vn/dev/pixi-lab/pixi-transform-v4.html
 
+![transform-tool](http://dev2.digitop.vn/dev/pixi-lab/assets/transform-tool.jpg)
+
 ## How to use:
 
 - Create a new TransformTool:
