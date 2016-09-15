@@ -1,9 +1,14 @@
+(function(){
 /**
  * @class
  * @extends PIXI.Container
  * @memberof PIXI
  * @PIXI v4 ONLY
+ * version: 1.1
+ * mobile: supported
+ * require: Hammer JS
  */
+
 function TransformTool(params)
 {
     PIXI.Container.call(this);
@@ -14,17 +19,116 @@ function TransformTool(params)
 
     this.corners = [];
 
-    //console.log(params.debug);
+    this.canvas = (params && (typeof params.canvas != "undefined")) ? params.canvas : null;
 
-    this.SCALE_BY_RATIO = 	(params && params.scaleByRatio) ? params.scaleByRatio : false;
-    this.DEBUGGING 		= 	(params && (typeof params.debug != "undefined")) ? params.debug : false;
-    this.LOCK_REGISTRATION_POINT = false;
-    this.CTRL_HOLD		=	false
-    //this.UNSELECTABLE = 	(params && params.unselectable) ? params.unselectable : false;
+    this.SCALE_BY_RATIO 			= 	(params && (typeof params.scaleByRatio != "undefined")) ? params.scaleByRatio : false;
+    this.DEBUGGING 					= 	(params && (typeof params.debug != "undefined")) ? params.debug : false;
+    this.LOCK_REGISTRATION_POINT 	= 	(params && (typeof params.lockReg != "undefined")) ? params.lockReg : false;
+    this.CTRL_HOLD					=	(this.LOCK_REGISTRATION_POINT) ? true : false;
+    this.CONTROL_SIZE				=	(params && (typeof params.controlSize != "undefined")) ? params.controlSize : 5;
+    this.RELATIVE_SCALE				=	(params && (typeof params.relativeScale != "undefined")) ? params.relativeScale : 1;
+    this.SHOW_BORDER				=	(params && (typeof params.border != "undefined")) ? params.border : false;
+    //this.UNSELECTABLE 			= 	(params && params.unselectable) ? params.unselectable : false;
     
     // events
 
     this.ON_CHANGE_CALLBACK = null;
+
+    var scope = this;
+    var tool = this;
+
+    //console.log(GDevice.type)
+    if(this.canvas && GDevice.type != "desktop")
+    {
+    	//$(".log").html("init hammer");
+
+	    this.hammer = new Hammer(this.canvas);
+	    this.hammer.get('pinch').set({ enable: true });
+        this.hammer.get('rotate').set({ enable: true });
+
+        var pinch = new Hammer.Pinch();
+		var rotate = new Hammer.Rotate();
+
+		// we want to detect both the same time
+		pinch.recognizeWith(rotate);
+
+		// add to the Manager
+		this.hammer.add([pinch, rotate]);
+
+		var targetPinchScale = 1;
+		var startPinchScale = 1;
+		var changedPinchScale = 0;
+		var touchPos = {x:0, y:0};
+		var startPos = {x:0, y:0};
+		
+		this.hammer.on("pinchstart", function(e){
+			//$(".log").html(e.type);
+			startPinchScale = e.scale;
+			touchPos = {
+				x: e.center.x - $(scope.canvas).offset().left,
+				y: e.center.y - $(scope.canvas).offset().top
+			}
+			touchPos.x /= scope.RELATIVE_SCALE;
+			touchPos.y /= scope.RELATIVE_SCALE;
+			startPos = {x:scope.target.x, y:scope.target.y};
+		})
+		this.hammer.on("pinchmove", function(e){
+			//$(".log").html(e.type);
+			changedPinchScale = e.scale - startPinchScale;
+    		if(scope.target){
+    			scope.target.scale.x = scope.target.scale.y = targetPinchScale + changedPinchScale;
+    			scope._positionControls();
+    		}
+
+    		//$(".log").html(e.center.x)
+    		var localMouse = {
+    			x: e.center.x - $(scope.canvas).offset().left,
+    			y: e.center.y - $(scope.canvas).offset().top
+    		}
+    		localMouse.x /= scope.RELATIVE_SCALE;
+			localMouse.y /= scope.RELATIVE_SCALE;
+
+    		var rangePos = {x:localMouse.x - touchPos.x, y:localMouse.y - touchPos.y}
+    		tool.target.position.x = startPos.x + rangePos.x;
+			tool.target.position.y = startPos.y + rangePos.y;
+			tool.translateLayer.x = tool.target.x;
+			tool.translateLayer.y = tool.target.y;
+		})
+
+		var targetPinchRotate = 1;
+		var startPinchRotate = 1;
+		var changedPinchRotate = 0;
+
+		this.hammer.on("rotatestart", function(e){
+			//$(".log").html(e.scale);
+			startPinchRotate = GMath.degToRad(e.rotation);
+		    targetPinchRotate = scope.target.rotation;
+		})
+		this.hammer.on("rotatemove", function(e){
+			//$(".log").html(e.type);
+			//$(".log").html(e.scale);
+			changedPinchRotate = GMath.degToRad(e.rotation) - startPinchRotate;
+    		if(scope.target){
+    			scope.target.rotation = targetPinchRotate + changedPinchRotate;
+    			scope.rotateLayer.rotation = scope.target.rotation;
+    			scope._positionControls();
+    		}
+		})
+
+		this.hammer.on("pan", function(e) {
+		    //$(".log").html(e.type);
+		    //$(".log").html(e.distance);
+		    //$(".log").html(e.scale);
+		    //console.log(e);
+		});
+
+		$(this.canvas).on("touchstart", function(e){
+			targetPinchScale = scope.target.scale.x;
+			targetPinchRotate = scope.target.rotation;
+		})
+	} else {
+		console.log("[TransformTool] Can't setup touch manager because canvas parameter is missed.");
+	}
 
     var scope = this;
 
@@ -33,17 +137,23 @@ function TransformTool(params)
     	if(e.which == 16){
     		scope.SCALE_BY_RATIO = true;
     	}
-    	if(e.which == 91){
-    		scope.CTRL_HOLD = true;
+    	if(!scope.LOCK_REGISTRATION_POINT)
+    	{
+	    	if(e.which == 91){
+	    		scope.CTRL_HOLD = true;
+	    	}
     	}
     });
     $(window).keyup(function(e) {
     	if(e.which == 16){
     		scope.SCALE_BY_RATIO = false;
     	}
-    	if(e.which == 91){
-    		scope.CTRL_HOLD = false;
-    	}
+    	if(!scope.LOCK_REGISTRATION_POINT)
+    	{
+	    	if(e.which == 91){
+	    		scope.CTRL_HOLD = false;
+	    	}
+	    }
     });
 
     // invisible at first
@@ -98,10 +208,9 @@ TransformTool.prototype.apply = function(target){
 		}
 	}
 	
+	// !! use my pivot percent !!
 	GPixi.usePivotPercent(target);
 	
-	//if(scope.DEBUGGING) console.log("target.anchor: ", target.anchor);
-
 	var ghostLayer = new PIXI.Graphics();
 	if(scope.DEBUGGING)
 	{
@@ -110,36 +219,34 @@ TransformTool.prototype.apply = function(target){
 		ghostLayer.beginFill(0xFFFF00, 0.0);
 	}
 	
-	ghostLayer.drawRect(0, 0, target.originalSize.width, target.originalSize.height);
-	//ghostLayer.position.x = -target.originalSize.width * target.anchor.x;
-	//ghostLayer.position.y = -target.originalSize.height * target.anchor.y;
+	if(scope.SHOW_BORDER){
+		ghostLayer.lineStyle(1, 0x000000, 0.8);
+	}
 
+	ghostLayer.drawRect(0, 0, target.originalSize.width, target.originalSize.height);
+	
 	// registration point
 	var registrationControl = new PIXI.Graphics();
 	registrationControl.lineStyle(1, 0x000000, 1);
-	registrationControl.beginFill(0x0000FF, 1); // xanh dương
-	registrationControl.drawCircle(0,0,5);
+	registrationControl.beginFill(0xFFFFFF, 1); // xanh dương
+	registrationControl.drawCircle(0,0, scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 
 	var registrationLayer = new PIXI.Container();
 	registrationLayer.ghostLayer = ghostLayer;
 	registrationLayer.addChild(ghostLayer);
 	registrationLayer.addChild(registrationControl);
 
-	//registrationControl.x = ghostLayer.position.x + target.anchor.x;
-	//registrationControl.y = ghostLayer.position.y + target.anchor.y;
-
 	// scale
 	var scaleControl = new PIXI.Container();
 
 	var scaleLayer = new PIXI.Container();
-	//scaleLayer.addChild(scaleControl);
-
+	
 	for(var i=0; i<4; i++){
 		var p = new PIXI.Graphics();
 		p.lineStyle(1, 0x000000, 1);
 		p.beginFill(0xFFFFFF, 1); // trắng
-		p.drawRect(0,0,10,10);
-		p.pivot.set(5,5);
+		p.drawRect(0,0,scope.CONTROL_SIZE*2 / scope.RELATIVE_SCALE, scope.CONTROL_SIZE*2 / scope.RELATIVE_SCALE);
+		p.pivot.set(scope.CONTROL_SIZE / scope.RELATIVE_SCALE, scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 		p.id = i;
 
 		scaleControl["p"+i] = p;
@@ -149,7 +256,7 @@ TransformTool.prototype.apply = function(target){
 		if(i==1) p.position.set(target.width*(1-target.pivotPercent.x), -target.height*target.pivotPercent.y);
 		if(i==2) p.position.set(target.width*(1-target.pivotPercent.x), target.height*(1-target.pivotPercent.y));
 		if(i==3) p.position.set(-target.width*target.pivotPercent.x, target.height*(1-target.pivotPercent.y));
-		//p.scale.set(1/target.scale.x, 1/target.scale.y);
+		
 	}
 
 	scaleLayer.addChild(registrationLayer);
@@ -158,25 +265,25 @@ TransformTool.prototype.apply = function(target){
 	var rotateControl = new PIXI.Graphics();
 	rotateControl.lineStyle(1, 0x000000, 1);
 	rotateControl.beginFill(0xFFFF00, 1); //vàng
-	rotateControl.drawCircle(0,0,5);
+	rotateControl.drawCircle(0,0,scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 	rotateControl.name = "rotateControl1";
 
 	var rotateControl2 = new PIXI.Graphics();
 	rotateControl2.lineStyle(1, 0x000000, 1);
 	rotateControl2.beginFill(0xFFFF00, 1); //vàng
-	rotateControl2.drawCircle(0,0,5);
+	rotateControl2.drawCircle(0,0,scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 	rotateControl2.name = "rotateControl2";
 
 	var rotateControl3 = new PIXI.Graphics();
 	rotateControl3.lineStyle(1, 0x000000, 1);
 	rotateControl3.beginFill(0xFFFF00, 1); //vàng
-	rotateControl3.drawCircle(0,0,5);
+	rotateControl3.drawCircle(0,0,scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 	rotateControl3.name = "rotateControl3";
 
 	var rotateControl4 = new PIXI.Graphics();
 	rotateControl4.lineStyle(1, 0x000000, 1);
 	rotateControl4.beginFill(0xFFFF00, 1); //vàng
-	rotateControl4.drawCircle(0,0,5);
+	rotateControl4.drawCircle(0,0,scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 	rotateControl4.name = "rotateControl4";
 
 	var rotateLayer = new PIXI.Container();
@@ -191,13 +298,11 @@ TransformTool.prototype.apply = function(target){
 	var translateControl = new PIXI.Graphics();
 	translateControl.lineStyle(1, 0x000000, 1);
 	translateControl.beginFill(0xFF0000, 1); // đỏ
-	translateControl.drawCircle(0,0,5);
+	translateControl.drawCircle(0,0,scope.CONTROL_SIZE / scope.RELATIVE_SCALE);
 
 	var translateLayer = new PIXI.Container();
 	translateLayer.addChild(rotateLayer);
-	//translateLayer.addChild(rotateControl);
-	//translateLayer.addChild(translateControl);
-
+	
 	this.addChild(translateLayer);
 
 	this.registrationControl = registrationControl;
@@ -229,6 +334,15 @@ TransformTool.prototype.apply = function(target){
 		registrationControl.visible = false;
 	}
 	
+	if(GDevice.type != "desktop"){
+		//scaleControl.visible = false;
+		rotateControl.visible = false;
+		rotateControl2.visible = false;
+		rotateControl3.visible = false;
+		rotateControl4.visible = false;
+		registrationControl.visible = false;
+	}
+
 	//scaleControl.visible = false;
 	//rotateControl.visible = false;
 	translateControl.visible = false;
@@ -238,16 +352,20 @@ TransformTool.prototype.apply = function(target){
 
 	// bind events:
 
-	for(i=0; i<4; i++){
-		var p = scaleControl["p"+i];
-		this._addDragScale(p);
+	if(GDevice.type == "desktop")
+	{
+		for(i=0; i<4; i++){
+			var p = scaleControl["p"+i];
+			this._addDragScale(p);
+		}
+		this._addDragRegistration(registrationControl);
+		//this._addDragScale(scaleControl);
+		this._addDragRotate(rotateControl);
+		this._addDragRotate(rotateControl2);
+		this._addDragRotate(rotateControl3);
+		this._addDragRotate(rotateControl4);
 	}
-	this._addDragRegistration(registrationControl);
-	//this._addDragScale(scaleControl);
-	this._addDragRotate(rotateControl);
-	this._addDragRotate(rotateControl2);
-	this._addDragRotate(rotateControl3);
-	this._addDragRotate(rotateControl4);
+
 	this._addDragTranslate(ghostLayer);
 	
 	// show tool:
@@ -573,6 +691,13 @@ TransformTool.prototype._addDragTranslate = function(item) {
 	}
 
 	function onMove(e){
+		console.log(e.data);
+		//$(".log").html(e.data.originalEvent.touches.length);
+		//$(".log").html(e.data.originalEvent.changedTouches.length);
+		var isMultiTouch = (e.data.originalEvent.touches.length > 1);
+		if(isMultiTouch){
+			return;
+		}
 
 		var position = e.data.getLocalPosition(tool.target.parent);
 		var rangePos = {x:position.x - touchPos.x, y:position.y - touchPos.y}
@@ -902,3 +1027,6 @@ TransformTool.prototype.positionCorner = function(){
 	}
 }
 
+PIXI.TransformTool = TransformTool;
+
+}).call(this);

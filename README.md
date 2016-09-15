@@ -9,7 +9,8 @@ Demo: http://dev2.digitop.vn/dev/pixi-lab/pixi-transform-v4.html
 
 - Create a new TransformTool:
 ```
-var transformTool = new TransformTool();
+// canvas parameter is required!
+var transformTool = new TransformTool({canvas: canvasElement});
 stage.addChild(transformTool);
 ```
 - Apply it on an object:
@@ -17,7 +18,7 @@ stage.addChild(transformTool);
 var object = new PIXI.Container();
 stage.addChild(object);
 ...
-object.on("click", function(){
+object.on("mousedown", function(){
   transformTool.apply(object);
 });
 ```
@@ -31,9 +32,10 @@ transformTool.clear();
 - Hold CTRL/CMD for scaling from the registration point.
 
 ## Notes:
-- Must include "js/plugins/gpixi.js" and "js/plugins/helper.js" before "js/transform-tool-v4-v01.js"
+- Must include "js/plugins/gpixi.js" and "js/plugins/helper.js" before "js/plugins/pixi-transform-tool.min.js"
 - jQuery is a need as well! (Sorry, I'm just too lazy to write pure Javascript)
-- The code is under development and hadn't been compressed. 
+- Hammer JS is required for multi touch handling.
+- The code is still under development, there could be some bugs. But overall, it's good enough to go.
 
 Please feel free to contribute!
 
