@@ -694,7 +694,7 @@ TransformTool.prototype._addDragTranslate = function(item) {
 		console.log(e.data);
 		//$(".log").html(e.data.originalEvent.touches.length);
 		//$(".log").html(e.data.originalEvent.changedTouches.length);
-		var isMultiTouch = (e.data.originalEvent.touches.length > 1);
+		var isMultiTouch = (typeof e.data.originalEvent.touches != "undefined" && e.data.originalEvent.touches.length > 1);
 		if(isMultiTouch){
 			return;
 		}
