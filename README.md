@@ -27,6 +27,17 @@ object.on("mousedown", function(){
 transformTool.clear();
 ```
 
+## Parameters:
+```
+var transformTool = new TransformTool({
+	debug: false, // true: show debug layer
+    canvas: canvasElement, // this is required
+    scaleByRatio: true, // force scale/rotate by ratio ~ same function as holding SHIFT
+    lockReg: true, // lock changing registration point ~ force registration point at (0.5, 0.5)
+    border: true // show bound border around the transformed object
+});
+```
+
 ## Some additional features:
 - Hold SHIFT for scaling by ratio.
 - Hold CTRL/CMD for scaling from the registration point.
