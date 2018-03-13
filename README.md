@@ -1,9 +1,9 @@
 # pixi-transform-tool
 I made a PIXI (v4) plugin which can transform a display object.
 
-Demo: http://dev2.digitop.vn/dev/pixi-lab/pixi-transform-v4.html
+Demo: http://dev4.digitop.vn/pixi-lab/pixi-transform-v4.html
 
-![transform-tool](http://dev2.digitop.vn/dev/pixi-lab/assets/transform-tool.jpg)
+![transform-tool](http://dev4.digitop.vn/pixi-lab/assets/transform-tool.jpg)
 
 ## How to use:
 
